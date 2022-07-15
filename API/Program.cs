@@ -1,12 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Persistence;
 
 namespace API
@@ -16,8 +8,26 @@ namespace API
         public static async Task Main(string[] args)
         {
             var host = CreateHostBuilder(args).Build();
+
+            await EnsureDb(host);
             
-            // Apply migrations to DB or create and seed new DB is not exists
+            await host.RunAsync();
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
+
+
+        /// <summary>
+        /// Apply migrations to DB or create and seed new DB is not exists
+        /// </summary>
+        /// <param name="host"></param>
+        private static async Task EnsureDb(IHost host)
+        {
             // >> Service Locator Pattern <<
             using var scope = host.Services.CreateScope();
             var services = scope.ServiceProvider;
@@ -34,15 +44,6 @@ namespace API
                 logger.LogError(ex, "An error occuured during migration");
                 throw;
             }
-            
-            await host.RunAsync();
         }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
     }
 }
